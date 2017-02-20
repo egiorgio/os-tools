@@ -15,18 +15,22 @@ def AuthenticatedHTTP_GETRequest(protocol,host,port,service,tokenID,responseType
 
      request=urllib2.Request(protocol+host+":"+port+service)
 
-     request.add_header('X-Auth-Token',tokenID)     
+     request.add_header('X-Auth-Token',tokenID)
 
      if responseType == 'JSON':
          request.add_header('Content-Type', 'application/json;charset=utf8')
          request.add_header('Accept', 'application/json')
-     
+
+     #print request.get_full_url()
+
      try :
-         response=urllib2.urlopen(request)
+         response=urllib2.urlopen(request,timeout=2)
          response_data=response.read()
 
          if responseType == "JSON":
              response_data=json.loads(response_data)
+         elif responseType == "Headers":
+             response_data=response.info()
 
          return response_data
      except urllib2.HTTPError,e :
@@ -38,23 +42,25 @@ def AuthenticatedHTTP_GETRequest(protocol,host,port,service,tokenID,responseType
 
 def AuthenticatedHTTP_POSTRequest(protocol,host,port,service,tokenID,postItemsDict):
      ''' Supports pairs of items to be inserted as headers for the post request'''
+
      request=urllib2.Request(protocol+host+":"+port+service)
      request.add_header('X-Auth-Token',tokenID)
 
-     for key in postItemsDict:      
+     for key in postItemsDict:
          request.add_header(key,postItemsDict[key])
 
-     ''' this turn get in post''' 
+     ''' this turn get in post'''
      request.add_data('')
-
+     #print request.get_full_url()
+     #print request.header_items()
      try :
          response=urllib2.urlopen(request)
          return 0
      except urllib2.HTTPError,e :
-         print "HTTP error :"+str(e.code)
+         print "HTTP error {} {}".format(str(e.code),str(e.reason))
      except urllib2.URLError,e :
          print "URL error : "+str(e.reason)
-     
+
      print "excepted"
      return -1
 
@@ -70,7 +76,7 @@ class TokenHandler:
         self.user=adminUser
         self.password=adminPassword
         self.token=self.readFile()
-  
+
     def getRemainingLifetime(self):
         """ return token remaining lifetime """
 
@@ -90,7 +96,7 @@ class TokenHandler:
 
     def readFile(self):
         """ read the token from file """
-        
+
         token=""
 
         try :
@@ -104,16 +110,16 @@ class TokenHandler:
         except ValueError as e:
             #print "Unable to read token from %s" %(self.tokenFilePath)
             token=self.refresh()
-        
+
         return token
-   
+
     def getToken(self):
         """ actually contact keystone and grabs the token
         :returns a tuple with
          - the Keystone token assigned to these credentials a
          - the expiration time (to avoid API REST calls at each iteration)
         """
-        
+
         auth_request = urllib2.Request(self.endpoint+"/v2.0/tokens")
         auth_request.add_header('Content-Type', 'application/json;charset=utf8')
         auth_request.add_header('Accept', 'application/json')
@@ -131,4 +137,3 @@ class TokenHandler:
         token = {'id': token_id, 'expires': expiration_timestamp}
 
         return token
-
