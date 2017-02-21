@@ -84,7 +84,8 @@ if __name__ == '__main__':
     metadataValue=sys.argv[4]
     metadataName=sys.argv[3]
     metadataName="x-object-meta-"+metadataName
+    metadataName=metadataName.lower()
     # if does not exist, create, else update
     userMD[metadataName]=metadataValue
-    print userMD
+    #print userMD
     metadataWrite(swiftHost,tenantID,tokenHandler.token,cName,swObjName,userMD)
